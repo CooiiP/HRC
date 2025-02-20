@@ -12,6 +12,13 @@
       background: #f0f4f8;
       padding-top: 50px;
     }
+    .remarks {
+  border: 2px solid #007bff; /* 深蓝色框线 */
+  background-color: #e9f5ff; /* 浅蓝色背景 */
+  padding: 10px;
+  border-radius: 8px;
+  margin-top: 10px;
+}
     .container {
       max-width: 800px;
       margin: 0 auto;
@@ -58,6 +65,10 @@
     .alert {
       margin-top: 20px;
     }
+    .unavailable-date {
+      color: red;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
@@ -95,21 +106,29 @@
         </div>
         
         <div class="form-group mt-3">
+          <label for="hotel">选择酒店</label>
+          <select id="hotel" class="form-select">
+            <option value="">选择酒店</option>
+            <!-- 这里会动态加载酒店选项 -->
+          </select>
+        </div>
+        
+        <div class="form-group mt-3">
           <label for="points">请输入您的积分</label>
-          <input type="number" id="points" class="form-control" placeholder="请输入您的积分" value="3400" min="0">
+          <input type="number" id="points", class="form-control" placeholder="请输入您的积分" value="99999" min="0">
         </div>
         
         <div class="form-group mt-3">
           <label for="check_in">入住日期</label>
-          <input type="date" id="check_in" class="form-control" >
+          <input type="date" id="check_in", class="form-control" >
         </div>
         
         <div class="form-group mt-3">
           <label for="check_out">离店日期</label>
-          <input type="date" id="check_out" class="form-control" >
+          <input type="date" id="check_out", class="form-control" >
         </div>
         
-        <button class="btn btn-primary mt-3 w-100" id="recommendBtn" type="button">推荐房型</button>
+        <button class="btn btn-primary mt-3 w-100" id="recommendBtn", type="button">推荐房型</button>
       </div>
     </div>
     
@@ -121,72 +140,1223 @@
   </div>
   
   <script>
-    const countrySelect = document.getElementById('country');
-    const regionSelect = document.getElementById('region');
-    const recommendBtn = document.getElementById('recommendBtn');
-    const recommendationsDiv = document.getElementById('recommendations');
-    const roomList = document.getElementById('roomList');
-    // 获取当前日期并设置默认值
-  const today = new Date();
-  const checkInDate = formatDate(today);
-  const checkOutDate = formatDate(new Date(today.setDate(today.getDate() + 2)));
-  document.getElementById('check_in').value = checkInDate;
-  document.getElementById('check_out').value = checkOutDate;
-  // 监听入住日期的变化
-  document.getElementById('check_in').addEventListener('change', function (e) {
-    const checkInValue = e.target.value;
-    if (checkInValue) {
-      const checkInDate = new Date(checkInValue);
-      const checkOutDate = new Date(checkInDate.setDate(checkInDate.getDate() + 2));
-      document.getElementById('check_out').value = formatDate(checkOutDate);
-    }
-  });
-  // 格式化日期为 YYYY-MM-DD
-  function formatDate(date) {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+    
+    
+const countrySelect = document.getElementById('country');
+const regionSelect = document.getElementById('region');
+const hotelSelect = document.getElementById('hotel');
+const recommendBtn = document.getElementById('recommendBtn');
+const recommendationsDiv = document.getElementById('recommendations');
+const roomList = document.getElementById('roomList');
+// 获取当前日期并设置默认值
+const today = new Date();
+const checkInDate = formatDate(today);
+const checkOutDate = formatDate(new Date(today.setDate(today.getDate() + 2)));
+document.getElementById('check_in').value = checkInDate;
+document.getElementById('check_out').value = checkOutDate;
+// 监听入住日期的变化
+document.getElementById('check_in').addEventListener('change', function (e) {
+  const checkInValue = e.target.value;
+  if (checkInValue) {
+    const checkInDate = new Date(checkInValue);
+    const checkOutDate = new Date(checkInDate.setDate(checkInDate.getDate() + 2));
+    document.getElementById('check_out').value = formatDate(checkOutDate);
   }
-    let countryData = {}; // 保存国家数据
-    // 加载国家的所有地区
-    async function loadCountryData(country) {
-      try {
-        const response = await fetch(`https://cooiip.github.io/HPC/assets/${country}.json`);
-        countryData = await response.json();
-        
-        // 加载地区数据
-        loadRegionOptions();
-        
-        // 默认加载源数据（没有选择地区时）
-        displayHotelRecommendations(countryData);
-      } catch (err) {
-        console.error("加载数据失败:", err);
-        alert("无法加载数据，请稍后再试。");
-      }
-    }
-    
-    // 加载地区选项
-    function loadRegionOptions() {
-      const regions = [...new Set(countryData.map(room => room.Location))];  // 获取不重复的地区
-      regionSelect.innerHTML = '<option value="">选择地区</option>';  // 清空并添加空选项
-      
-      regions.forEach(region => {
-        regionSelect.innerHTML += `<option value="${region}">${region}</option>`;
-      });
-    }
-    // 计算日期之间的天数
-    function calculateDaysBetweenDates(startDate, endDate) {
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-      return Math.floor((end - start) / (1000 * 60 * 60 * 24)) + 1;  // 包含开始日期
-    }
-    
-    function displayHotelRecommendations(data) {
+});
+// 格式化日期为 YYYY-MM-DD
+function formatDate(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+let countryData = {}; // 保存国家数据
+// 获取不可入住日期数据
+const blackoutDates =[
+        {
+          "Hotel_Name": "温德姆度假会苗场日之舞度假酒店",
+          "Date": "2025-05-20"
+        },
+        {
+          "Hotel_Name": "温德姆度假会苗场日之舞度假酒店",
+          "Date": "2025-05-21"
+        },
+        {
+          "Hotel_Name": "温德姆度假会苗场日之舞度假酒店",
+          "Date": "2025-05-22"
+        },
+        {
+          "Hotel_Name": "温德姆度假会御宿日之舞度假酒店",
+          "Date": "2025-02-18"
+        },
+        {
+          "Hotel_Name": "温德姆度假会御宿日之舞度假酒店",
+          "Date": "2025-02-19"
+        },
+        {
+          "Hotel_Name": "温德姆度假会御宿日之舞度假酒店",
+          "Date": "2025-02-20"
+        },
+        {
+          "Hotel_Name": "温德姆度假会湖景日之舞度假酒店",
+          "Date": "2025-04-22"
+        },
+        {
+          "Hotel_Name": "温德姆度假会湖景日之舞度假酒店",
+          "Date": "2025-04-23"
+        },
+        {
+          "Hotel_Name": "温德姆度假会湖景日之舞度假酒店",
+          "Date": "2025-04-24"
+        },
+        {
+          "Hotel_Name": "温德姆度假会轻井泽日之舞度假酒店",
+          "Date": "2025-04-08"
+        },
+        {
+          "Hotel_Name": "温德姆度假会轻井泽日之舞度假酒店",
+          "Date": "2025-04-09"
+        },
+        {
+          "Hotel_Name": "温德姆度假会轻井泽日之舞度假酒店",
+          "Date": "2025-04-10"
+        },
+        {
+          "Hotel_Name": "温德姆度假会立科日之舞度假酒店",
+          "Date": "2025-06-10"
+        },
+        {
+          "Hotel_Name": "温德姆度假会立科日之舞度假酒店",
+          "Date": "2025-06-11"
+        },
+        {
+          "Hotel_Name": "温德姆度假会立科日之舞度假酒店",
+          "Date": "2025-06-12"
+        },
+        {
+          "Hotel_Name": "温德姆度假会那须日之舞度假酒店",
+          "Date": "2025-04-15"
+        },
+        {
+          "Hotel_Name": "温德姆度假会那须日之舞度假酒店",
+          "Date": "2025-04-16"
+        },
+        {
+          "Hotel_Name": "温德姆度假会那须日之舞度假酒店",
+          "Date": "2025-04-17"
+        },
+        {
+          "Hotel_Name": "温德姆度假会河口湖日之舞度假酒店",
+          "Date": "2025-05-27"
+        },
+        {
+          "Hotel_Name": "温德姆度假会河口湖日之舞度假酒店",
+          "Date": "2025-05-28"
+        },
+        {
+          "Hotel_Name": "温德姆度假会河口湖日之舞度假酒店",
+          "Date": "2025-05-29"
+        },
+        {
+          "Hotel_Name": "温德姆度假会山中湖日之舞度假酒店",
+          "Date": "2025-05-13"
+        },
+        {
+          "Hotel_Name": "温德姆度假会山中湖日之舞度假酒店",
+          "Date": "2025-05-14"
+        },
+        {
+          "Hotel_Name": "温德姆度假会山中湖日之舞度假酒店",
+          "Date": "2025-05-15"
+        },
+        {
+          "Hotel_Name": "温德姆度假会安房鸭川日之舞度假酒店",
+          "Date": "2025-03-11"
+        },
+        {
+          "Hotel_Name": "温德姆度假会安房鸭川日之舞度假酒店",
+          "Date": "2025-03-12"
+        },
+        {
+          "Hotel_Name": "温德姆度假会安房鸭川日之舞度假酒店",
+          "Date": "2025-03-13"
+        },
+        {
+          "Hotel_Name": "温德姆度假会胜浦东日之舞度假酒店",
+          "Date": "2025-03-04"
+        },
+        {
+          "Hotel_Name": "温德姆度假会胜浦东日之舞度假酒店",
+          "Date": "2025-03-05"
+        },
+        {
+          "Hotel_Name": "温德姆度假会胜浦东日之舞度假酒店",
+          "Date": "2025-03-06"
+        },
+        {
+          "Hotel_Name": "温德姆度假会草津日之舞度假酒店",
+          "Date": "2025-12-02"
+        },
+        {
+          "Hotel_Name": "温德姆度假会草津日之舞度假酒店",
+          "Date": "2025-12-03"
+        },
+        {
+          "Hotel_Name": "温德姆度假会草津日之舞度假酒店",
+          "Date": "2025-12-04"
+        },
+        {
+          "Hotel_Name": "温德姆度假会箱根强罗日之舞度假酒店",
+          "Date": "2025-07-01"
+        },
+        {
+          "Hotel_Name": "温德姆度假会箱根强罗日之舞度假酒店",
+          "Date": "2025-07-02"
+        },
+        {
+          "Hotel_Name": "温德姆度假会箱根强罗日之舞度假酒店",
+          "Date": "2025-07-03"
+        },
+        {
+          "Hotel_Name": "温德姆度假会箱根宫城野日之舞度假酒店",
+          "Date": "2025-06-24"
+        },
+        {
+          "Hotel_Name": "温德姆度假会箱根宫城野日之舞度假酒店",
+          "Date": "2025-06-25"
+        },
+        {
+          "Hotel_Name": "温德姆度假会箱根宫城野日之舞度假酒店",
+          "Date": "2025-06-26"
+        },
+        {
+          "Hotel_Name": "温德姆度假会热海日之舞度假酒店",
+          "Date": "2025-06-17"
+        },
+        {
+          "Hotel_Name": "温德姆度假会热海日之舞度假酒店",
+          "Date": "2025-06-18"
+        },
+        {
+          "Hotel_Name": "温德姆度假会热海日之舞度假酒店",
+          "Date": "2025-06-19"
+        },
+        {
+          "Hotel_Name": "温德姆度假会伊豆高原日之舞度假酒店",
+          "Date": "2025-11-11"
+        },
+        {
+          "Hotel_Name": "温德姆度假会伊豆高原日之舞度假酒店",
+          "Date": "2025-11-12"
+        },
+        {
+          "Hotel_Name": "温德姆度假会伊豆高原日之舞度假酒店",
+          "Date": "2025-11-13"
+        },
+        {
+          "Hotel_Name": "国敦岛湾酒店及度假村",
+          "Date": "2025-01-17"
+        },
+        {
+          "Hotel_Name": "国敦岛湾酒店及度假村",
+          "Date": "2025-01-18"
+        },
+        {
+          "Hotel_Name": "国敦岛湾酒店及度假村",
+          "Date": "2025-02-01"
+        },
+        {
+          "Hotel_Name": "国敦岛湾酒店及度假村",
+          "Date": "2025-02-02"
+        },
+        {
+          "Hotel_Name": "国敦岛湾酒店及度假村",
+          "Date": "2025-02-03"
+        },
+        {
+          "Hotel_Name": "国敦岛湾酒店及度假村",
+          "Date": "2025-02-04"
+        },
+        {
+          "Hotel_Name": "国敦岛湾酒店及度假村",
+          "Date": "2025-02-05"
+        },
+        {
+          "Hotel_Name": "国敦岛湾酒店及度假村",
+          "Date": "2025-02-06"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-01-29"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-01-30"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-01-31"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-07-01"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-07-02"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-07-03"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-07-04"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-07-05"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-07-06"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-07-07"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-07-08"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-07-09"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-07-10"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-07-11"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-07-12"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-07-13"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-07-14"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-07-15"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-07-16"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-07-17"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-07-18"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-07-19"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-07-20"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-07-21"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-07-22"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-07-23"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-07-24"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-07-25"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-07-26"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-07-27"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-07-28"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-07-29"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-07-30"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-07-31"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-08-01"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-08-02"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-08-03"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-08-04"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-08-05"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-08-06"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-08-07"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-08-08"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-08-09"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-08-10"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-08-11"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-08-12"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-08-13"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-08-14"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-08-15"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-08-16"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-08-17"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-08-18"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-08-19"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-08-20"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-08-21"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-08-22"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-08-23"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-08-24"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-08-25"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-08-26"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-08-27"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-08-28"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-08-29"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-08-30"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-08-31"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-10-01"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-10-02"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-10-03"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-10-04"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-10-05"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-10-06"
+        },
+        {
+          "Hotel_Name": "西安豪享来温德姆至尊酒店",
+          "Date": "2025-10-07"
+        },
+        {
+          "Hotel_Name": "深圳温德姆至尊酒店",
+          "Date": "2025-01-29"
+        },
+        {
+          "Hotel_Name": "深圳温德姆至尊酒店",
+          "Date": "2025-01-30"
+        },
+        {
+          "Hotel_Name": "深圳温德姆至尊酒店",
+          "Date": "2025-01-31"
+        },
+        {
+          "Hotel_Name": "深圳温德姆至尊酒店",
+          "Date": "2025-10-01"
+        },
+        {
+          "Hotel_Name": "深圳温德姆至尊酒店",
+          "Date": "2025-10-02"
+        },
+        {
+          "Hotel_Name": "深圳温德姆至尊酒店",
+          "Date": "2025-10-03"
+        },
+        {
+          "Hotel_Name": "深圳温德姆至尊酒店",
+          "Date": "2025-10-04"
+        },
+        {
+          "Hotel_Name": "深圳温德姆至尊酒店",
+          "Date": "2025-10-05"
+        },
+        {
+          "Hotel_Name": "深圳温德姆至尊酒店",
+          "Date": "2025-10-06"
+        },
+        {
+          "Hotel_Name": "深圳温德姆至尊酒店",
+          "Date": "2025-10-07"
+        },
+        {
+          "Hotel_Name": "三亚丽禾温德姆酒店",
+          "Date": "2025-01-01"
+        },
+        {
+          "Hotel_Name": "三亚丽禾温德姆酒店",
+          "Date": "2025-01-20"
+        },
+        {
+          "Hotel_Name": "三亚丽禾温德姆酒店",
+          "Date": "2025-01-21"
+        },
+        {
+          "Hotel_Name": "三亚丽禾温德姆酒店",
+          "Date": "2025-01-22"
+        },
+        {
+          "Hotel_Name": "三亚丽禾温德姆酒店",
+          "Date": "2025-01-23"
+        },
+        {
+          "Hotel_Name": "三亚丽禾温德姆酒店",
+          "Date": "2025-01-24"
+        },
+        {
+          "Hotel_Name": "三亚丽禾温德姆酒店",
+          "Date": "2025-01-25"
+        },
+        {
+          "Hotel_Name": "三亚丽禾温德姆酒店",
+          "Date": "2025-01-26"
+        },
+        {
+          "Hotel_Name": "三亚丽禾温德姆酒店",
+          "Date": "2025-01-27"
+        },
+        {
+          "Hotel_Name": "三亚丽禾温德姆酒店",
+          "Date": "2025-01-28"
+        },
+        {
+          "Hotel_Name": "三亚丽禾温德姆酒店",
+          "Date": "2025-01-29"
+        },
+        {
+          "Hotel_Name": "三亚丽禾温德姆酒店",
+          "Date": "2025-01-30"
+        },
+        {
+          "Hotel_Name": "三亚丽禾温德姆酒店",
+          "Date": "2025-01-31"
+        },
+        {
+          "Hotel_Name": "三亚丽禾温德姆酒店",
+          "Date": "2025-02-01"
+        },
+        {
+          "Hotel_Name": "三亚丽禾温德姆酒店",
+          "Date": "2025-02-02"
+        },
+        {
+          "Hotel_Name": "三亚丽禾温德姆酒店",
+          "Date": "2025-02-03"
+        },
+        {
+          "Hotel_Name": "三亚丽禾温德姆酒店",
+          "Date": "2025-02-04"
+        },
+        {
+          "Hotel_Name": "三亚丽禾温德姆酒店",
+          "Date": "2025-02-05"
+        },
+        {
+          "Hotel_Name": "三亚丽禾温德姆酒店",
+          "Date": "2025-02-06"
+        },
+        {
+          "Hotel_Name": "三亚丽禾温德姆酒店",
+          "Date": "2025-02-07"
+        },
+        {
+          "Hotel_Name": "三亚丽禾温德姆酒店",
+          "Date": "2025-02-08"
+        },
+        {
+          "Hotel_Name": "三亚丽禾温德姆酒店",
+          "Date": "2025-02-09"
+        },
+        {
+          "Hotel_Name": "三亚丽禾温德姆酒店",
+          "Date": "2025-02-10"
+        },
+        {
+          "Hotel_Name": "三亚丽禾温德姆酒店",
+          "Date": "2025-02-11"
+        },
+        {
+          "Hotel_Name": "三亚丽禾温德姆酒店",
+          "Date": "2025-02-12"
+        },
+        {
+          "Hotel_Name": "三亚丽禾温德姆酒店",
+          "Date": "2025-04-30"
+        },
+        {
+          "Hotel_Name": "三亚丽禾温德姆酒店",
+          "Date": "2025-05-01"
+        },
+        {
+          "Hotel_Name": "三亚丽禾温德姆酒店",
+          "Date": "2025-05-02"
+        },
+        {
+          "Hotel_Name": "三亚丽禾温德姆酒店",
+          "Date": "2025-05-03"
+        },
+        {
+          "Hotel_Name": "三亚丽禾温德姆酒店",
+          "Date": "2025-05-04"
+        },
+        {
+          "Hotel_Name": "三亚丽禾温德姆酒店",
+          "Date": "2025-09-30"
+        },
+        {
+          "Hotel_Name": "三亚丽禾温德姆酒店",
+          "Date": "2025-10-01"
+        },
+        {
+          "Hotel_Name": "三亚丽禾温德姆酒店",
+          "Date": "2025-10-02"
+        },
+        {
+          "Hotel_Name": "三亚丽禾温德姆酒店",
+          "Date": "2025-10-03"
+        },
+        {
+          "Hotel_Name": "三亚丽禾温德姆酒店",
+          "Date": "2025-10-04"
+        },
+        {
+          "Hotel_Name": "三亚丽禾温德姆酒店",
+          "Date": "2025-10-05"
+        },
+        {
+          "Hotel_Name": "三亚丽禾温德姆酒店",
+          "Date": "2025-10-06"
+        },
+        {
+          "Hotel_Name": "三亚丽禾温德姆酒店",
+          "Date": "2025-10-07"
+        },
+        {
+          "Hotel_Name": "三亚丽禾温德姆酒店",
+          "Date": "2025-12-29"
+        },
+        {
+          "Hotel_Name": "三亚丽禾温德姆酒店",
+          "Date": "2025-12-30"
+        },
+        {
+          "Hotel_Name": "三亚丽禾温德姆酒店",
+          "Date": "2025-12-31"
+        },
+        {
+          "Hotel_Name": "国敦岛湾酒店及度假村",
+          "Date": "2025-01-17"
+        },
+        {
+          "Hotel_Name": "国敦岛湾酒店及度假村",
+          "Date": "2025-01-18"
+        },
+        {
+          "Hotel_Name": "国敦岛湾酒店及度假村",
+          "Date": "2025-02-01"
+        },
+        {
+          "Hotel_Name": "国敦岛湾酒店及度假村",
+          "Date": "2025-02-02"
+        },
+        {
+          "Hotel_Name": "国敦岛湾酒店及度假村",
+          "Date": "2025-02-03"
+        },
+        {
+          "Hotel_Name": "国敦岛湾酒店及度假村",
+          "Date": "2025-02-04"
+        },
+        {
+          "Hotel_Name": "国敦岛湾酒店及度假村",
+          "Date": "2025-02-05"
+        },
+        {
+          "Hotel_Name": "国敦岛湾酒店及度假村",
+          "Date": "2025-02-06"
+        },
+        {
+          "Hotel_Name": "华美达诺提勒斯奥雷瓦酒店",
+          "Date": "2025-01-01"
+        },
+        {
+          "Hotel_Name": "华美达诺提勒斯奥雷瓦酒店",
+          "Date": "2025-01-02"
+        },
+        {
+          "Hotel_Name": "华美达诺提勒斯奥雷瓦酒店",
+          "Date": "2025-01-03"
+        },
+        {
+          "Hotel_Name": "华美达诺提勒斯奥雷瓦酒店",
+          "Date": "2025-01-04"
+        },
+        {
+          "Hotel_Name": "华美达诺提勒斯奥雷瓦酒店",
+          "Date": "2025-01-05"
+        },
+        {
+          "Hotel_Name": "华美达诺提勒斯奥雷瓦酒店",
+          "Date": "2025-01-06"
+        },
+        {
+          "Hotel_Name": "华美达诺提勒斯奥雷瓦酒店",
+          "Date": "2025-01-07"
+        },
+        {
+          "Hotel_Name": "华美达诺提勒斯奥雷瓦酒店",
+          "Date": "2025-01-08"
+        },
+        {
+          "Hotel_Name": "华美达诺提勒斯奥雷瓦酒店",
+          "Date": "2025-01-09"
+        },
+        {
+          "Hotel_Name": "华美达诺提勒斯奥雷瓦酒店",
+          "Date": "2025-01-10"
+        },
+        {
+          "Hotel_Name": "华美达诺提勒斯奥雷瓦酒店",
+          "Date": "2025-01-11"
+        },
+        {
+          "Hotel_Name": "华美达诺提勒斯奥雷瓦酒店",
+          "Date": "2025-01-12"
+        },
+        {
+          "Hotel_Name": "华美达诺提勒斯奥雷瓦酒店",
+          "Date": "2025-01-13"
+        },
+        {
+          "Hotel_Name": "华美达诺提勒斯奥雷瓦酒店",
+          "Date": "2025-01-14"
+        },
+        {
+          "Hotel_Name": "华美达诺提勒斯奥雷瓦酒店",
+          "Date": "2025-01-15"
+        },
+        {
+          "Hotel_Name": "华美达诺提勒斯奥雷瓦酒店",
+          "Date": "2025-01-16"
+        },
+        {
+          "Hotel_Name": "华美达诺提勒斯奥雷瓦酒店",
+          "Date": "2025-01-17"
+        },
+        {
+          "Hotel_Name": "华美达诺提勒斯奥雷瓦酒店",
+          "Date": "2025-01-18"
+        },
+        {
+          "Hotel_Name": "华美达诺提勒斯奥雷瓦酒店",
+          "Date": "2025-01-19"
+        },
+        {
+          "Hotel_Name": "华美达诺提勒斯奥雷瓦酒店",
+          "Date": "2025-01-20"
+        },
+        {
+          "Hotel_Name": "华美达诺提勒斯奥雷瓦酒店",
+          "Date": "2025-01-27"
+        },
+        {
+          "Hotel_Name": "华美达诺提勒斯奥雷瓦酒店",
+          "Date": "2025-02-06"
+        },
+        {
+          "Hotel_Name": "札幌大通温德姆花园酒店",
+          "Date": "2025-02-01"
+        },
+        {
+          "Hotel_Name": "札幌大通温德姆花园酒店",
+          "Date": "2025-02-02"
+        },
+        {
+          "Hotel_Name": "札幌大通温德姆花园酒店",
+          "Date": "2025-02-03"
+        },
+        {
+          "Hotel_Name": "札幌大通温德姆花园酒店",
+          "Date": "2025-02-04"
+        },
+        {
+          "Hotel_Name": "札幌大通温德姆花园酒店",
+          "Date": "2025-02-05"
+        },
+        {
+          "Hotel_Name": "札幌大通温德姆花园酒店",
+          "Date": "2025-02-06"
+        },
+        {
+          "Hotel_Name": "札幌大通温德姆花园酒店",
+          "Date": "2025-02-07"
+        },
+        {
+          "Hotel_Name": "札幌大通温德姆花园酒店",
+          "Date": "2025-02-08"
+        },
+        {
+          "Hotel_Name": "札幌大通温德姆花园酒店",
+          "Date": "2025-02-09"
+        },
+        {
+          "Hotel_Name": "札幌大通温德姆花园酒店",
+          "Date": "2025-02-10"
+        },
+        {
+          "Hotel_Name": "札幌大通温德姆花园酒店",
+          "Date": "2025-02-11"
+        },
+        {
+          "Hotel_Name": "札幌大通温德姆花园酒店",
+          "Date": "2025-02-12"
+        },
+        {
+          "Hotel_Name": "札幌大通温德姆花园酒店",
+          "Date": "2025-02-13"
+        },
+        {
+          "Hotel_Name": "札幌大通温德姆花园酒店",
+          "Date": "2025-02-14"
+        },
+        {
+          "Hotel_Name": "札幌大通温德姆花园酒店",
+          "Date": "2025-02-15"
+        }
+      ];
+ // 获取备注数据
+ const remarksData = [
+        {
+          "Hotel_Name": "巴厘岛阿优达度假酒店",
+          "Remark": "该酒店官网只可预订至三月底。"
+        },
+        {
+          "Hotel_Name": "温德姆度假会悉尼酒店",
+          "Remark": "1. 针对在Club Wyndham Sydney提前超过9个月进行的预订的附加规则\r\n1.1 Blackout Dates（ 1 Jan - 4 Jan， 27 Feb - 8 Mar，5 Apr - 25 Apr，28 Jun - 18 Jul， 20 Sep - 10 Oct， 20 Dec - 31 Dec):在此期间至少需要连续7晚的住宿，但是可以拆分至不同度假村预订，但需遵守周末住宿限制。Blackout Dates的预订不能在线进行，必须通过致电业主服务进行。\r\n1.2 除了blackout dates以外的日期，必须有连续三晚的预定"
+        },
+        {
+          "Hotel_Name": "温德姆度假会悉尼酒店",
+          "Remark": "2.停车位是有限的，并且停车会产生额外的费用（该价格可能会波动）"
+        },
+        {
+          "Hotel_Name": "温德姆度假会悉尼酒店",
+          "Remark": "3. Studio  Upper Deluxe (Sleeps 2) 该房型残疾人友好"
+        },
+        {
+          "Hotel_Name": "温德姆度假会墨尔本酒店",
+          "Remark": "1.停车位是有限的，并且停车会产生额外的费用（该价格可能会波动）"
+        },
+        {
+          "Hotel_Name": "温德姆度假会墨尔本酒店",
+          "Remark": "2.Studio Deluxe (Sleeps 2)该房型残疾人友好"
+        },
+        {
+          "Hotel_Name": "温德姆度假会瓦纳卡酒店",
+          "Remark": "Studio（Sleeps 2）和1-Bedroom（Sleeps 4）房型残疾人友好"
+        },
+        {
+          "Hotel_Name": "温德姆俱乐部托斯卡纳酒店",
+          "Remark": "1.请注意，该物业由第三方管理，而非俱乐部或任何相关的温德姆实体。"
+        },
+        {
+          "Hotel_Name": "温德姆度假会托尔坎度假酒店",
+          "Remark": "2.Hotel Room - Limited Outlook (Sleeps 2）该房型残疾人友好"
+        },
+        {
+          "Hotel_Name": "温德姆度假会珀斯酒店",
+          "Remark": "停车位是有限的，并且停车会产生额外的费用（该价格可能会波动）"
+        },
+        {
+          "Hotel_Name": "普吉岛森马亚海滨度假酒店",
+          "Remark": "该酒店官网只可预定至十月底"
+        },
+        {
+          "Hotel_Name": "温德姆度假会凯恩斯酒店",
+          "Remark": "1.请注意，该物业由第三方管理，而非俱乐部或任何相关的温德姆实体。"
+        },
+        {
+          "Hotel_Name": "温德姆度假会凯恩斯酒店",
+          "Remark": "2.俱乐部所属的公寓位于一个封闭式住宅小区内。"
+        },
+        {
+          "Hotel_Name": "温德姆度假会凯恩斯酒店",
+          "Remark": "3.本度假村为三层建筑，无电梯。如果您需要底层公寓，请务必预订位于底层的房型。"
+        },
+        {
+          "Hotel_Name": "温德姆度假会冲浪者天堂酒店",
+          "Remark": "1-Bedroom Low Floor (Sleeps 4)该房型残疾人友好"
+        },
+        {
+          "Hotel_Name": "温德姆度假会肖尔湾酒店",
+          "Remark": "Studio（Sleeps 2）该房型残疾人友好"
+        },
+        {
+          "Hotel_Name": "温德姆度假会柏斯酒店",
+          "Remark": "1.该酒店官网只可预定至三月底"
+        },
+        {
+          "Hotel_Name": "温德姆度假会柏斯酒店",
+          "Remark": "2.所有房型两晚起订"
+        },
+        {
+          "Hotel_Name": "罗托鲁阿华美达度假酒店",
+          "Remark": "1.所有公寓（无障碍专用房间除外）都设有室内和室外楼梯，行动不便者可能不太适用。"
+        },
+        {
+          "Hotel_Name": "罗托鲁阿华美达度假酒店",
+          "Remark": "2.3-Bedroom (Sleeps 8) 该房型残疾人友好"
+        },
+        {
+          "Hotel_Name": "温德姆度假会史蒂芬斯港酒店",
+          "Remark": "1.请注意，此房产由第三方管理，而非俱乐部或任何相关的温德姆实体。"
+        },
+        {
+          "Hotel_Name": "温德姆度假会史蒂芬斯港酒店",
+          "Remark": "2.在您入住期间，部分度假村设施可能无法使用。请访问clubwyndhamsp.com/resorts/port - stephens/club - wyndham - port - stephens ，并点击 “出发前” 获取完整详情。"
+        },
+        {
+          "Hotel_Name": "菲利普岛华美达酒店",
+          "Remark": "1.所有公寓（无障碍专用房间除外）都设有室内和室外楼梯，行动不便者可能不太适用。"
+        },
+        {
+          "Hotel_Name": "菲利普岛华美达酒店",
+          "Remark": "2.3-Bedroom (Sleeps 6) 该房型残疾人友好"
+        },
+        {
+          "Hotel_Name": "温德姆度假会艾尔利海滩酒店",
+          "Remark": "三卧总统套房：三晚起订"
+        },
+        {
+          "Hotel_Name": "阿德莱德普尔特尼街爵怡温德姆酒店",
+          "Remark": "该酒店官网只可预订至四月底。"
+        },
+        {
+          "Hotel_Name": "温德姆度假会巴拉瑞特酒店",
+          "Remark": "这个度假村是一栋两层楼的建筑，没有电梯。如果您需要底层公寓，请确保预订位于底层的房型。"
+        },
+        {
+          "Hotel_Name": "温德姆度假会科夫斯港酒店",
+          "Remark": "2-Bedroom (Sleeps 6)和2-Bedroom Deluxe (Sleeps 6)房型残疾人友好"
+        },
+        {
+          "Hotel_Name": "温德姆度假会科夫斯港露台酒店",
+          "Remark": "1.请注意，此酒店由第三方管理，而非俱乐部或任何相关温德姆实体。"
+        },
+        {
+          "Hotel_Name": "温德姆度假会科夫斯港露台酒店",
+          "Remark": "2.预订时请注意，两卧室公寓包括一卧室公寓和一室公寓。这两个房间都可以有自己的入口或使用共享的外部入口。"
+        },
+        {
+          "Hotel_Name": "国敦岛湾酒店及度假村",
+          "Remark": "1.两晚起订"
+        },
+        {
+          "Hotel_Name": "国敦岛湾酒店及度假村",
+          "Remark": "2.该酒店官网只可预订至三月底。"
+        },
+        {
+          "Hotel_Name": "温德姆度假会皇冠塔酒店",
+          "Remark": "请注意，此酒店由第三方管理，而非俱乐部或任何相关温德姆实体。"
+        },
+        {
+          "Hotel_Name": "温德姆度假会丁诺高原酒店",
+          "Remark": "大多数公寓都有外部楼梯，许多公寓有内部楼梯，这可能不适合行动不便的人。请联系业主服务部了解详情。"
+        },
+        {
+          "Hotel_Name": "温德姆度假会戴士柏酒店",
+          "Remark": "1.Studio (Sleeps 2)房型残疾人友好"
+        },
+        {
+          "Hotel_Name": "温德姆度假会戴士柏酒店",
+          "Remark": "2.这个度假村是一栋两层楼的建筑，没有电梯。如果您需要底层公寓，请确保预订位于底层的房型。"
+        },
+        {
+          "Hotel_Name": "温德姆度假会斐济布雷瓦酒店",
+          "Remark": "1-Bedroom (Sleeps 4)和1-Bedroom Deluxe (Sleeps 4)房型残疾人友好"
+        },
+        {
+          "Hotel_Name": "温德姆度假会弗林斯海滩酒店",
+          "Remark": "Studio (Sleeps 2)和1-Bedroom (Sleeps 4)房型残疾人友好"
+        },
+        {
+          "Hotel_Name": "黄金海滩温德姆华美达度假酒店",
+          "Remark": "1-Bedroom (Sleeps 4)和2-Bedroom (Sleeps 6)房型残疾人友好"
+        },
+        {
+          "Hotel_Name": "俱乐部温德姆巴伐利亚酒店",
+          "Remark": "请注意，此酒店由第三方管理，而非俱乐部或任何相关温德姆实体。"
+        },
+        {
+          "Hotel_Name": "温德姆度假会七英里海滩酒店",
+          "Remark": "1.2-Bedroom (Sleeps 6)房型残疾人友好"
+        },
+        {
+          "Hotel_Name": "温德姆度假会七英里海滩酒店",
+          "Remark": "2.标准三卧室公寓和两/三卧室豪华公寓都有内部楼梯，这可能不适合行动不便的人。请联系业主服务部了解详情。"
+        },
+        {
+          "Hotel_Name": "巴厘岛温德姆塔曼萨里吉瓦度假酒店",
+          "Remark": "该酒店官网只可预订至五月底。"
+        },
+        {
+          "Hotel_Name": "温德姆度假会基拉海滩酒店",
+          "Remark": "1-Bedroom (Sleeps 4)和2-Bedroom (Sleeps 6)房型残疾人友好"
+        },
+        {
+          "Hotel_Name": "温德姆度假会莱克斯恩特伦斯酒店",
+          "Remark": "请注意，此酒店由第三方管理，而非俱乐部或任何相关温德姆实体。"
+        },
+        {
+          "Hotel_Name": "温德姆度假会曼利海滩酒店",
+          "Remark": "所有房间都可以睡4个人，但为了舒适起见，强烈建议最多容纳2名成人。"
+        },
+        {
+          "Hotel_Name": "俱乐部温德姆诺曼底酒店",
+          "Remark": "请注意，此酒店由第三方管理，而非俱乐部或任何相关温德姆实体。"
+        },
+        {
+          "Hotel_Name": "温德姆度假会麦奎利港酒店",
+          "Remark": "请注意，此酒店由第三方管理，而非俱乐部或任何相关温德姆实体。"
+        },
+        {
+          "Hotel_Name": "华美达诺提勒斯奥雷瓦酒店",
+          "Remark": "1.该酒店官网只可预订至三月底。"
+        },
+        {
+          "Hotel_Name": "华美达诺提勒斯奥雷瓦酒店",
+          "Remark": "2.两晚起订"
+        },
+        {
+          "Hotel_Name": "温德姆度假会珀科尔滨山丘酒店",
+          "Remark": "1.请注意，此酒店由第三方管理，而非俱乐部或任何相关温德姆实体。"
+        },
+        {
+          "Hotel_Name": "温德姆度假会珀科尔滨山丘酒店",
+          "Remark": "2.请注意，两卧室公寓包括一卧室公寓和一室公寓。这两个房间可以各自使用自己的入口，也可以使用共享的外部入口。"
+        },
+        {
+          "Hotel_Name": "世界马克重聚酒店",
+          "Remark": "该酒店1/3-2/6、9/26-11/13、11/28-12/11不可预订。"
+        },
+        {
+          "Hotel_Name": "巴厘岛梅鲁萨卡·努萨杜瓦度假酒店",
+          "Remark": "该酒店4/1起开放预定。"
+        },
+        {
+          "Hotel_Name": "普吉岛森马亚海滨度假酒店",
+          "Remark": "该酒店只可预订至10月底。"
+        },
+        {
+          "Hotel_Name": "札幌大通温德姆花园酒店",
+          "Remark": "该酒店只可预订至8月底。"
+        },
+        {
+          "Hotel_Name": "世界马克科纳酒店",
+          "Remark": "1.所有预订必须以7晚为单位进行，且入住和退房需在固定日期进行。需缴纳临时住宿税（TOT），并在离店时直接支付给度假村。该税由夏威夷州政府征收。"
+        },
+        {
+          "Hotel_Name": "世界马克科纳酒店",
+          "Remark": "2.入住日仅限周四、周五、周六或周日。"
+        },
+        {
+          "Hotel_Name": "俱乐部温德姆卡‘艾欧凯酒店",
+          "Remark": "1.所有预订必须以7晚为单位进行，且入住和退房需在固定日期进行。需缴纳临时住宿税（TOT），并在离店时直接支付给度假村。该税由夏威夷州政府征收。"
+        },
+        {
+          "Hotel_Name": "俱乐部温德姆卡‘艾欧凯酒店",
+          "Remark": "2.入住日仅限周四、周五、周六或周日。"
+        },
+        {
+          "Hotel_Name": "世界马克日落酒店",
+          "Remark": "单元包括双层床，最多可容纳两人。"
+        }
+      ];
+// 加载国家的所有地区
+async function loadCountryData(country) {
+  try {
+    const response = await fetch(`https://cooiip.github.io/HPC/assets/${country}.json`);
+    countryData = await response.json();
+    // 加载地区数据
+    loadRegionOptions();
+    // 默认加载源数据（没有选择地区时）
+    displayHotelRecommendations(countryData);
+  } catch (err) {
+    console.error("加载数据失败:", err);
+    alert("无法加载数据，请稍后再试。");
+  }
+}
+// 加载地区选项
+function loadRegionOptions() {
+  const regions = [...new Set(countryData.map(room => room.Location))];  // 获取不重复的地区
+  regionSelect.innerHTML = '<option value="">选择地区</option>';  // 清空并添加空选项
+  regions.forEach(region => {
+    regionSelect.innerHTML += `<option value="${region}">${region}</option>`;
+  });
+}
+// 加载酒店选项
+function loadHotelOptions(region) {
+  const hotels = [...new Set(countryData
+    .filter(room => room.Location === region)
+    .map(room => room.Hotel_Name))];  // 获取不重复的酒店名称
+  hotelSelect.innerHTML = '<option value="">选择酒店</option>';  // 清空并添加空选项
+  hotels.forEach(hotel => {
+    hotelSelect.innerHTML += `<option value="${hotel}">${hotel}</option>`;
+  });
+}
+// 监听地区选择变化
+regionSelect.addEventListener('change', (e) => {
+  const selectedRegion = e.target.value;
+  if (selectedRegion) {
+    loadHotelOptions(selectedRegion);
+  } else {
+    hotelSelect.innerHTML = '<option value="">选择酒店</option>';  // 清空酒店选项
+  }
+});
+// 计算日期之间的天数
+function calculateDaysBetweenDates(startDate, endDate) {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  return Math.floor((end - start) / (1000 * 60 * 60 * 24)) + 1;  // 包含开始日期
+}
+function displayHotelRecommendations(data) {
   const checkInDate = new Date(document.getElementById('check_in').value);
   const checkOutDate = new Date(document.getElementById('check_out').value);
   const points = parseInt(document.getElementById('points').value);
-  const totalDays = calculateDaysBetweenDates(checkInDate, checkOutDate);
+  const selectedHotel = hotelSelect.value;  // 获取用户选择的酒店
   // 计算前三天和后三天的日期范围
   const previousStartDate = new Date(checkInDate);
   previousStartDate.setDate(previousStartDate.getDate() - 3); // 前三天
@@ -220,7 +1390,7 @@
     return acc;
   }, {});
   // 仅根据当前时间段的费用进行筛选
-  const filteredRooms = Object.values(availableRooms)
+  let filteredRooms = Object.values(availableRooms)
     .filter(room => {
       const currentTotalCost = Object.values(room.currentDays).reduce((sum, cost) => sum + cost, 0);
       return currentTotalCost <= points;
@@ -230,27 +1400,66 @@
       const bTotal = Object.values(b.currentDays).reduce((sum, cost) => sum + cost, 0);
       return aTotal - bTotal;
     });
+  // 如果用户选择了酒店，则进一步筛选
+  if (selectedHotel) {
+    filteredRooms = filteredRooms.filter(room => room.Hotel_Name === selectedHotel);
+  }
   if (filteredRooms.length > 0) {
     roomList.innerHTML = '';
-    filteredRooms.forEach(room => {
+    // 将备注数据按酒店分组
+    const hotelRemarksMap = {};
+    remarksData.forEach(remark => {
+      if (!hotelRemarksMap[remark.Hotel_Name]) {
+        hotelRemarksMap[remark.Hotel_Name] = [];
+      }
+      hotelRemarksMap[remark.Hotel_Name].push(remark.Remark);
+    });
+    let lastHotelName = ''; // 记录上一个酒店的名称
+    filteredRooms.forEach((room, index) => {
+      // 获取当前酒店的不可入住日期
+      const hotelUnavailableDates = blackoutDates
+        .filter(item => item.Hotel_Name === room.Hotel_Name)
+        .map(item => item.Date);
       // 计算当前日期总价
       const currentTotalCost = Object.values(room.currentDays).reduce((sum, cost) => sum + cost, 0);
       // 格式化当前日期价格
       const currentDaysList = Object.entries(room.currentDays)
-        .map(([date, cost]) => `<tr><td>${date}</td><td>${cost} 积分</td></tr>`)
+        .map(([date, cost]) => {
+          const isUnavailable = hotelUnavailableDates.includes(date);
+          return `<tr><td class="${isUnavailable ? 'unavailable-date' : ''}">${date}</td><td>${cost} 积分</td></tr>`;
+        })
         .join('');
       // 格式化前三天价格
       const previousDaysList = Object.entries(room.previousDays)
-        .map(([date, cost]) => `<tr><td>${date}</td><td>${cost} 积分</td></tr>`)
+        .map(([date, cost]) => {
+          const isUnavailable = hotelUnavailableDates.includes(date);
+          return `<tr><td class="${isUnavailable ? 'unavailable-date' : ''}">${date}</td><td>${cost} 积分</td></tr>`;
+        })
         .join('');
       // 格式化后三天价格
       const nextDaysList = Object.entries(room.nextDays)
-        .map(([date, cost]) => `<tr><td>${date}</td><td>${cost} 积分</td></tr>`)
+        .map(([date, cost]) => {
+          const isUnavailable = hotelUnavailableDates.includes(date);
+          return `<tr><td class="${isUnavailable ? 'unavailable-date' : ''}">${date}</td><td>${cost} 积分</td></tr>`;
+        })
         .join('');
+      // 检查是否是当前酒店的第一条记录
+      const isFirstRoomOfHotel = room.Hotel_Name !== lastHotelName;
+      lastHotelName = room.Hotel_Name; // 更新上一个酒店的名称
+      // 获取当前酒店的备注
+      const hotelRemarks = hotelRemarksMap[room.Hotel_Name] || [];
       roomList.innerHTML += `
         <li class="list-group-item">
           <strong>酒店:</strong> ${room.Hotel_Name} <br>
           <strong>房型:</strong> ${room.Room_Type} <br>
+          ${isFirstRoomOfHotel && hotelRemarks.length > 0 ? `
+            <div class="remarks">
+              <strong>备注:</strong>
+              <ul>
+                ${hotelRemarks.map(remark => `<li>${remark.replace(/\r\n/g, '<br>')}</li>`).join('')}
+              </ul>
+            </div>
+          ` : ''}
           <div class="row mt-3">
             <div class="col-md-4">
               <strong>前三天价格:</strong>
@@ -304,29 +1513,24 @@
     alert("没有符合条件的房型，请尝试其他查询条件。");
   }
 }
-
-    
-    recommendBtn.addEventListener('click', () => {
-      const selectedCountry = countrySelect.value;
-      const selectedRegion = regionSelect.value;
-      
-      if (selectedRegion) {
-        // 筛选指定地区的数据
-        const filteredData = countryData.filter(room => room.Location === selectedRegion);
-        displayHotelRecommendations(filteredData);
-      } else {
-        // 显示整个国家的推荐房型
-        displayHotelRecommendations(countryData);
-      }
-    });
-    
-    // 初始化加载数据
-    countrySelect.addEventListener('change', (e) => {
-      loadCountryData(e.target.value);
-    });
-    
-    // 默认加载第一个国家的数据
-    loadCountryData(countrySelect.value);
+recommendBtn.addEventListener('click', () => {
+  const selectedCountry = countrySelect.value;
+  const selectedRegion = regionSelect.value;
+  if (selectedRegion) {
+    // 筛选指定地区的数据
+    const filteredData = countryData.filter(room => room.Location === selectedRegion);
+    displayHotelRecommendations(filteredData);
+  } else {
+    // 显示整个国家的推荐房型
+    displayHotelRecommendations(countryData);
+  }
+});
+// 初始化加载数据
+countrySelect.addEventListener('change', (e) => {
+  loadCountryData(e.target.value);
+});
+// 默认加载第一个国家的数据
+loadCountryData(countrySelect.value);
   </script>
 </body>
 </html>
