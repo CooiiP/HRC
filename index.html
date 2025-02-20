@@ -181,18 +181,18 @@
       const end = new Date(endDate);
       return Math.floor((end - start) / (1000 * 60 * 60 * 24)) + 1;  // 包含开始日期
     }
-// 显示酒店推荐信息
-function displayHotelRecommendations(data) {
+    
+    function displayHotelRecommendations(data) {
   const checkInDate = new Date(document.getElementById('check_in').value);
   const checkOutDate = new Date(document.getElementById('check_out').value);
   const points = parseInt(document.getElementById('points').value);
   const totalDays = calculateDaysBetweenDates(checkInDate, checkOutDate);
-  // 计算前几天和后几天的范围
+  // 计算前三天和后三天的日期范围
   const previousStartDate = new Date(checkInDate);
-  previousStartDate.setDate(previousStartDate.getDate() - totalDays+1); // 前几天
+  previousStartDate.setDate(previousStartDate.getDate() - 3); // 前三天
   const nextEndDate = new Date(checkOutDate);
-  nextEndDate.setDate(nextEndDate.getDate() + totalDays-1); // 后几天
-  // 筛选房型并计算费用
+  nextEndDate.setDate(nextEndDate.getDate() + 3); // 后三天
+  // 筛选房型并计算每天的价格
   const availableRooms = data.reduce((acc, room) => {
     const roomDate = new Date(room.Date);
     const roomKey = `${room.Hotel_Name}-${room.Room_Type}`;
@@ -200,39 +200,101 @@ function displayHotelRecommendations(data) {
       acc[roomKey] = {
         Hotel_Name: room.Hotel_Name,
         Room_Type: room.Room_Type,
-        currentCost: 0,
-        previousCost: 0,
-        nextCost: 0,
+        currentDays: {}, // 选中日期每天的价格
+        previousDays: {}, // 前三天每天的价格
+        nextDays: {}, // 后三天每天的价格
       };
     }
     // 当前时间段
     if (roomDate >= checkInDate && roomDate < checkOutDate) {
-      acc[roomKey].currentCost += room.Cost;
+      acc[roomKey].currentDays[room.Date] = room.Cost;
     }
-    // 前几天
+    // 前三天
     if (roomDate >= previousStartDate && roomDate < checkInDate) {
-      acc[roomKey].previousCost += room.Cost;
+      acc[roomKey].previousDays[room.Date] = room.Cost;
     }
-    // 后几天
+    // 后三天
     if (roomDate >= checkOutDate && roomDate < nextEndDate) {
-      acc[roomKey].nextCost += room.Cost;
+      acc[roomKey].nextDays[room.Date] = room.Cost;
     }
     return acc;
   }, {});
   // 仅根据当前时间段的费用进行筛选
   const filteredRooms = Object.values(availableRooms)
-    .filter(room => room.currentCost <= points) // 仅筛选当前时间段的费用
-    .sort((a, b) => a.currentCost - b.currentCost);
+    .filter(room => {
+      const currentTotalCost = Object.values(room.currentDays).reduce((sum, cost) => sum + cost, 0);
+      return currentTotalCost <= points;
+    })
+    .sort((a, b) => {
+      const aTotal = Object.values(a.currentDays).reduce((sum, cost) => sum + cost, 0);
+      const bTotal = Object.values(b.currentDays).reduce((sum, cost) => sum + cost, 0);
+      return aTotal - bTotal;
+    });
   if (filteredRooms.length > 0) {
     roomList.innerHTML = '';
     filteredRooms.forEach(room => {
+      // 计算当前日期总价
+      const currentTotalCost = Object.values(room.currentDays).reduce((sum, cost) => sum + cost, 0);
+      // 格式化当前日期价格
+      const currentDaysList = Object.entries(room.currentDays)
+        .map(([date, cost]) => `<tr><td>${date}</td><td>${cost} 积分</td></tr>`)
+        .join('');
+      // 格式化前三天价格
+      const previousDaysList = Object.entries(room.previousDays)
+        .map(([date, cost]) => `<tr><td>${date}</td><td>${cost} 积分</td></tr>`)
+        .join('');
+      // 格式化后三天价格
+      const nextDaysList = Object.entries(room.nextDays)
+        .map(([date, cost]) => `<tr><td>${date}</td><td>${cost} 积分</td></tr>`)
+        .join('');
       roomList.innerHTML += `
         <li class="list-group-item">
           <strong>酒店:</strong> ${room.Hotel_Name} <br>
           <strong>房型:</strong> ${room.Room_Type} <br>
-          <strong>当前费用:</strong> ${room.currentCost} 积分 <br>
-          <strong>前几天费用:</strong> ${room.previousCost} 积分 <br>
-          <strong>后几天费用:</strong> ${room.nextCost} 积分 <br>
+          <div class="row mt-3">
+            <div class="col-md-4">
+              <strong>前三天价格:</strong>
+              <table class="table table-bordered">
+                <thead>
+                  <tr>
+                    <th>日期</th>
+                    <th>所需积分</th>
+                  </tr>
+                </thead>
+                <tbody>${previousDaysList}</tbody>
+              </table>
+            </div>
+            <div class="col-md-4">
+              <strong>当前日期价格:</strong>
+              <table class="table table-bordered">
+                <thead>
+                  <tr>
+                    <th>日期</th>
+                    <th>所需积分</th>
+                  </tr>
+                </thead>
+                <tbody>${currentDaysList}</tbody>
+                <tfoot>
+                  <tr>
+                    <th>总价</th>
+                    <th>${currentTotalCost} 积分</th>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+            <div class="col-md-4">
+              <strong>后三天价格:</strong>
+              <table class="table table-bordered">
+                <thead>
+                  <tr>
+                    <th>日期</th>
+                    <th>所需积分</th>
+                  </tr>
+                </thead>
+                <tbody>${nextDaysList}</tbody>
+              </table>
+            </div>
+          </div>
         </li>
       `;
     });
@@ -242,6 +304,7 @@ function displayHotelRecommendations(data) {
     alert("没有符合条件的房型，请尝试其他查询条件。");
   }
 }
+
     
     recommendBtn.addEventListener('click', () => {
       const selectedCountry = countrySelect.value;
