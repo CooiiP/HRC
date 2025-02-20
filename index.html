@@ -63,6 +63,7 @@
 <body>
   <div class="container">
     <h1>酒店房型推荐系统</h1>
+    
     <!-- 国家选择卡片 -->
     <div class="card">
       <div class="card-body">
@@ -82,7 +83,6 @@
             <option value="法国">法国</option>
             <option value="墨西哥">墨西哥</option>
             <option value="加拿大">加拿大</option>
-            <!-- 你可以根据需要添加更多的国家 -->
           </select>
         </div>
         
@@ -101,12 +101,12 @@
         
         <div class="form-group mt-3">
           <label for="check_in">入住日期</label>
-          <input type="date" id="check_in" class="form-control" value="2025-01-01">
+          <input type="date" id="check_in" class="form-control" >
         </div>
         
         <div class="form-group mt-3">
           <label for="check_out">离店日期</label>
-          <input type="date" id="check_out" class="form-control" value="2025-01-02">
+          <input type="date" id="check_out" class="form-control" >
         </div>
         
         <button class="btn btn-primary mt-3 w-100" id="recommendBtn" type="button">推荐房型</button>
@@ -126,9 +126,29 @@
     const recommendBtn = document.getElementById('recommendBtn');
     const recommendationsDiv = document.getElementById('recommendations');
     const roomList = document.getElementById('roomList');
-    
+    // 获取当前日期并设置默认值
+  const today = new Date();
+  const checkInDate = formatDate(today);
+  const checkOutDate = formatDate(new Date(today.setDate(today.getDate() + 2)));
+  document.getElementById('check_in').value = checkInDate;
+  document.getElementById('check_out').value = checkOutDate;
+  // 监听入住日期的变化
+  document.getElementById('check_in').addEventListener('change', function (e) {
+    const checkInValue = e.target.value;
+    if (checkInValue) {
+      const checkInDate = new Date(checkInValue);
+      const checkOutDate = new Date(checkInDate.setDate(checkInDate.getDate() + 2));
+      document.getElementById('check_out').value = formatDate(checkOutDate);
+    }
+  });
+  // 格式化日期为 YYYY-MM-DD
+  function formatDate(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
     let countryData = {}; // 保存国家数据
-
     // 加载国家的所有地区
     async function loadCountryData(country) {
       try {
@@ -155,62 +175,73 @@
         regionSelect.innerHTML += `<option value="${region}">${region}</option>`;
       });
     }
-
     // 计算日期之间的天数
     function calculateDaysBetweenDates(startDate, endDate) {
       const start = new Date(startDate);
       const end = new Date(endDate);
       return Math.floor((end - start) / (1000 * 60 * 60 * 24)) + 1;  // 包含开始日期
     }
-
-    // 显示酒店推荐信息
-    function displayHotelRecommendations(data) {
-      const checkInDate = document.getElementById('check_in').value;
-      const checkOutDate = document.getElementById('check_out').value;
-      const totalDays = calculateDaysBetweenDates(checkInDate, checkOutDate);
-      const points = parseInt(document.getElementById('points').value);
-      
-      // 筛选日期范围内的数据，并计算每个房型的总费用
-      const availableRooms = data.filter(room => {
-        const roomDate = new Date(room.Date);
-        const checkIn = new Date(checkInDate);
-        const checkOut = new Date(checkOutDate);
-        return roomDate >= checkIn && roomDate < checkOut;
-      }).reduce((acc, room) => {
-        const roomKey = `${room.Hotel_Name}-${room.Room_Type}`;
-        if (!acc[roomKey]) {
-          acc[roomKey] = {
-            Hotel_Name: room.Hotel_Name,
-            Room_Type: room.Room_Type,
-            totalCost: 0
-          };
-        }
-        acc[roomKey].totalCost += room.Cost;
-        return acc;
-      }, {});
-      
-      const filteredRooms = Object.values(availableRooms)
-        .filter(room => room.totalCost <= points)
-        .sort((a, b) => b.totalCost - a.totalCost);
-      
-      if (filteredRooms.length > 0) {
-        roomList.innerHTML = '';
-        filteredRooms.forEach(room => {
-          roomList.innerHTML += `
-            <li class="list-group-item">
-              <strong>酒店:</strong> ${room.Hotel_Name} <br>
-              <strong>房型:</strong> ${room.Room_Type} <br>
-              <strong>总费用:</strong> ${room.totalCost} 积分
-            </li>
-          `;
-        });
-        recommendationsDiv.style.display = 'block';
-      } else {
-        // 清空以前的结果
-        recommendationsDiv.style.display = 'none';
-        alert("没有符合条件的房型，请尝试其他查询条件。");
-      }
+// 显示酒店推荐信息
+function displayHotelRecommendations(data) {
+  const checkInDate = new Date(document.getElementById('check_in').value);
+  const checkOutDate = new Date(document.getElementById('check_out').value);
+  const points = parseInt(document.getElementById('points').value);
+  const totalDays = calculateDaysBetweenDates(checkInDate, checkOutDate);
+  // 计算前几天和后几天的范围
+  const previousStartDate = new Date(checkInDate);
+  previousStartDate.setDate(previousStartDate.getDate() - totalDays+1); // 前几天
+  const nextEndDate = new Date(checkOutDate);
+  nextEndDate.setDate(nextEndDate.getDate() + totalDays-1); // 后几天
+  // 筛选房型并计算费用
+  const availableRooms = data.reduce((acc, room) => {
+    const roomDate = new Date(room.Date);
+    const roomKey = `${room.Hotel_Name}-${room.Room_Type}`;
+    if (!acc[roomKey]) {
+      acc[roomKey] = {
+        Hotel_Name: room.Hotel_Name,
+        Room_Type: room.Room_Type,
+        currentCost: 0,
+        previousCost: 0,
+        nextCost: 0,
+      };
     }
+    // 当前时间段
+    if (roomDate >= checkInDate && roomDate < checkOutDate) {
+      acc[roomKey].currentCost += room.Cost;
+    }
+    // 前几天
+    if (roomDate >= previousStartDate && roomDate < checkInDate) {
+      acc[roomKey].previousCost += room.Cost;
+    }
+    // 后几天
+    if (roomDate >= checkOutDate && roomDate < nextEndDate) {
+      acc[roomKey].nextCost += room.Cost;
+    }
+    return acc;
+  }, {});
+  // 仅根据当前时间段的费用进行筛选
+  const filteredRooms = Object.values(availableRooms)
+    .filter(room => room.currentCost <= points) // 仅筛选当前时间段的费用
+    .sort((a, b) => a.currentCost - b.currentCost);
+  if (filteredRooms.length > 0) {
+    roomList.innerHTML = '';
+    filteredRooms.forEach(room => {
+      roomList.innerHTML += `
+        <li class="list-group-item">
+          <strong>酒店:</strong> ${room.Hotel_Name} <br>
+          <strong>房型:</strong> ${room.Room_Type} <br>
+          <strong>当前费用:</strong> ${room.currentCost} 积分 <br>
+          <strong>前几天费用:</strong> ${room.previousCost} 积分 <br>
+          <strong>后几天费用:</strong> ${room.nextCost} 积分 <br>
+        </li>
+      `;
+    });
+    recommendationsDiv.style.display = 'block';
+  } else {
+    recommendationsDiv.style.display = 'none';
+    alert("没有符合条件的房型，请尝试其他查询条件。");
+  }
+}
     
     recommendBtn.addEventListener('click', () => {
       const selectedCountry = countrySelect.value;
@@ -236,4 +267,3 @@
   </script>
 </body>
 </html>
-
