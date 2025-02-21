@@ -9,77 +9,109 @@
   <style>
     /* 页面背景颜色 */
     body {
-      background: #f0f4f8;
-      padding-top: 50px;
+      background: #f4f7fc;
+      font-family: 'Roboto', sans-serif;
+      padding-top: 40px;
     }
-    .remarks {
-  border: 2px solid #007bff; /* 深蓝色框线 */
-  background-color: #e9f5ff; /* 浅蓝色背景 */
-  padding: 10px;
-  border-radius: 8px;
-  margin-top: 10px;
-}
     .container {
-      max-width: 800px;
+      max-width: 900px;
       margin: 0 auto;
-    }
-    .card {
-      background: #ffffff;
-      border-radius: 10px;
-      box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.1);
-      margin-bottom: 30px;
     }
     h1 {
       color: #4A90E2;
       text-align: center;
+      margin-bottom: 20px;
+      font-size: 2.5rem;
+      font-weight: bold;
+    }
+    /* 卡片样式 */
+    .card {
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
       margin-bottom: 30px;
     }
-    .form-select, .form-control, .btn {
-      border-radius: 8px;
-      box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1);
+    .card-body {
+      padding: 30px;
     }
+    /* 按钮样式 */
     .btn-primary {
       background-color: #007bff;
       border-color: #007bff;
-      transition: background-color 0.3s ease;
+      transition: all 0.3s ease;
     }
     .btn-primary:hover {
       background-color: #0056b3;
       border-color: #0056b3;
     }
+    /* 表单选择框 */
+    .form-select, .form-control {
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
+    }
+    /* 推荐房型的样式 */
     .recommendations-card {
       padding: 20px;
-      background-color: #f8f9fa;
-      border: 1px solid #ddd;
-      border-radius: 10px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      background-color: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      display: none;
     }
     .list-group-item {
       border: none;
-      padding: 10px;
+      padding: 20px;
       background-color: #f9f9f9;
+      margin-bottom: 15px;
+      border-radius: 8px;
+      transition: transform 0.3s ease;
     }
     .list-group-item:hover {
       background-color: #f0f0f0;
+      transform: translateX(10px);
     }
-    .alert {
-      margin-top: 20px;
-    }
+    /* 弹窗与日期 */
     .unavailable-date {
       color: red;
       font-weight: bold;
+    }
+    .remarks {
+      background-color: #e1f7fc;
+      border: 2px solid #4A90E2;
+      border-radius: 8px;
+      padding: 15px;
+      margin-top: 10px;
+    }
+    .remarks ul {
+      list-style-type: none;
+      padding-left: 0;
+    }
+    .remarks ul li {
+      margin-bottom: 8px;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    /* 响应式设计 */
+    @media (max-width: 768px) {
+      .container {
+        padding-left: 15px;
+        padding-right: 15px;
+      }
     }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>酒店房型推荐系统</h1>
-    
+    <div class="text-center mt-4">
+      <small>Powered by <strong>CooiiP</strong></small><br>
+      <small>Thanks to <strong>Tw\Ct\Ch\Iv\Ja</strong></small>
+    </div>
     <!-- 国家选择卡片 -->
     <div class="card">
       <div class="card-body">
         <div class="form-group">
-          <label for="country">选择国家</label>
+          <label for="country">国家</label>
           <select id="country" class="form-select">
             <option value="日本">日本</option>
             <option value="美国">美国</option>
@@ -97,43 +129,41 @@
           </select>
         </div>
         
-        <div class="form-group mt-3">
-          <label for="region">选择地区</label>
+        <div class="form-group">
+          <label for="region">地区</label>
           <select id="region" class="form-select">
             <option value="">选择地区</option>
-            <!-- 这里会动态加载地区选项 -->
           </select>
         </div>
         
-        <div class="form-group mt-3">
-          <label for="hotel">选择酒店</label>
+        <div class="form-group">
+          <label for="hotel">酒店</label>
           <select id="hotel" class="form-select">
             <option value="">选择酒店</option>
-            <!-- 这里会动态加载酒店选项 -->
           </select>
         </div>
         
-        <div class="form-group mt-3">
+        <div class="form-group">
           <label for="points">请输入您的积分</label>
-          <input type="number" id="points", class="form-control" placeholder="请输入您的积分" value="99999" min="0">
+          <input type="number" id="points" class="form-control" value="88888" min="0">
         </div>
         
-        <div class="form-group mt-3">
+        <div class="form-group">
           <label for="check_in">入住日期</label>
-          <input type="date" id="check_in", class="form-control" >
+          <input type="date" id="check_in" class="form-control">
         </div>
         
-        <div class="form-group mt-3">
+        <div class="form-group">
           <label for="check_out">离店日期</label>
-          <input type="date" id="check_out", class="form-control" >
+          <input type="date" id="check_out" class="form-control">
         </div>
         
-        <button class="btn btn-primary mt-3 w-100" id="recommendBtn", type="button">推荐房型</button>
+        <button class="btn btn-primary mt-3 w-100" id="recommendBtn" type="button">推荐房型</button>
       </div>
     </div>
     
     <!-- 推荐房型结果 -->
-    <div id="recommendations" class="recommendations-card" style="display:none;">
+    <div id="recommendations" class="recommendations-card">
       <h4>推荐的房型</h4>
       <ul id="roomList" class="list-group"></ul>
     </div>
