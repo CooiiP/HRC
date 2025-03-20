@@ -18,7 +18,7 @@
       margin: 0 auto;
     }
     h1 {
-      color: #4A90E2;
+      color: #9c7c4bc2;
       text-align: center;
       margin-bottom: 20px;
       font-size: 2.5rem;
@@ -36,13 +36,13 @@
     }
     /* 按钮样式 */
     .btn-primary {
-      background-color: #007bff;
-      border-color: #007bff;
+      background-color: #9C7B4B;
+      border-color: #9C7B4B;
       transition: all 0.3s ease;
     }
     .btn-primary:hover {
-      background-color: #0056b3;
-      border-color: #0056b3;
+      background-color: #9c7c4bda;
+      border-color: #9c7c4bda;
     }
     /* 表单选择框 */
     .form-select, .form-control {
@@ -58,17 +58,19 @@
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
       display: none;
     }
+    /* 修改推荐房型卡片样式 */
     .list-group-item {
+      background-color: #ffffff;
       border: none;
+      border-radius: 12px;
       padding: 20px;
-      background-color: #f9f9f9;
-      margin-bottom: 15px;
-      border-radius: 8px;
-      transition: transform 0.3s ease;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
     .list-group-item:hover {
-      background-color: #f0f0f0;
-      transform: translateX(10px);
+      transform: translateY(-5px);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
     }
     /* 弹窗与日期 */
     .unavailable-date {
@@ -102,8 +104,10 @@
 </head>
 <body>
   <div class="container">
-    <h1>酒店房型推荐系统</h1>
+    <h1>温德姆酒店积分计算器</h1>
     <div class="text-center mt-4">
+      <small><strong>感谢您选择温德姆酒店！</strong></small><br>
+      <small>**红色日期为酒店的不可入住日期</small><br>
       <small>Powered by <strong>CooiiP</strong></small><br>
       <small>Thanks to <strong>Tw\Ct\Ch\Iv\Ja</strong></small>
     </div>
@@ -164,10 +168,13 @@
     
     <!-- 推荐房型结果 -->
     <div id="recommendations" class="recommendations-card">
-      <h4>推荐的房型</h4>
-      <ul id="roomList" class="list-group"></ul>
+      <div class="card-body">
+        <h4 class="text-center">房型列表</h4>
+        <ul id="roomList" class="list-group"></ul>
+      </div>
     </div>
   </div>
+</body>
   
   <script>
     
