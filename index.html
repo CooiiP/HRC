@@ -12,24 +12,24 @@
       background: #f4f7fc;
       font-family: 'Roboto', sans-serif;
       padding-top: 40px;
-      min-height:100vh;
+      min-height: 100vh;
       position: relative;
     }
-        /* 顶部背景图片 */
-        body::before {
+    /* 顶部背景图片 */
+    body::before {
       content: "";
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
-      height: 654px; /* 控制背景高度 */
+      height: auto;
+      min-height: 654px; /* 控制背景高度 */
       background-image: url('https://cooiip.github.io/HPC/assets/top-background.png');
       background-size: 100% auto;
       background-position: center top;
       background-repeat: no-repeat;
-      z-index: -1; /* 让背景不会覆盖内容 */
+      z-index: -1;
     }
-
     /* 底部背景图片 */
     body::after {
       content: "";
@@ -37,7 +37,8 @@
       bottom: 0;
       left: 0;
       width: 100%;
-      height: 654px; /* 控制背景高度 */
+      height: auto;
+      min-height: 654px;
       background-image: url('https://cooiip.github.io/HPC/assets/bottom-background.png');
       background-size: 100% auto;
       background-position: center bottom;
@@ -47,7 +48,6 @@
     .container {
       max-width: 900px;
       margin: 0 auto;
-      min-height: calc(100vh-300px);
     }
     h1 {
       color: #614a27;
@@ -126,6 +126,17 @@
       font-size: 14px;
       line-height: 1.5;
     }
+    /* 小标题矩阵样式 */
+    .matrix-label {
+      background-color: #9C7B4B;
+      color: #fff;
+      padding: 6px 0;
+      border-radius: 8px;
+      font-weight: bold;
+      display: block; /* 让宽度继承父级 */
+      width: 100%; /* 让宽度等于表格 */
+      text-align: center;
+    }
     /* 响应式设计 */
     @media (max-width: 768px) {
       .container {
@@ -139,7 +150,6 @@
   <div class="container">
     <h1>感谢您选择温德姆寰球度假会！</h1>
     <div class="text-center mt-4">
-      
       <small>**红色日期为酒店的不可入住日期</small><br>
       <small>Designed by <strong>CooiiP</strong></small><br>
       <small>Thanks to <strong>Tway\Chris</strong></small>
@@ -165,36 +175,30 @@
             <option value="加拿大">加拿大</option>
           </select>
         </div>
-        
         <div class="form-group">
           <label for="region">地区</label>
           <select id="region" class="form-select">
             <option value="">选择地区</option>
           </select>
         </div>
-        
         <div class="form-group">
           <label for="hotel">酒店</label>
           <select id="hotel" class="form-select">
             <option value="">选择酒店</option>
           </select>
         </div>
-        
         <div class="form-group">
           <label for="points">请输入您的积分</label>
           <input type="number" id="points" class="form-control" value="88888" min="0">
         </div>
-        
         <div class="form-group">
           <label for="check_in">入住日期</label>
           <input type="date" id="check_in" class="form-control">
         </div>
-        
         <div class="form-group">
           <label for="check_out">离店日期</label>
           <input type="date" id="check_out" class="form-control">
         </div>
-        
         <button class="btn btn-primary mt-3 w-100" id="recommendBtn" type="button">推荐房型</button>
       </div>
     </div>
@@ -202,12 +206,11 @@
     <!-- 推荐房型结果 -->
     <div id="recommendations" class="recommendations-card">
       <div class="card-body">
-        <h4 class="text-center">房型列表</h4>
+        <h6 class="text-center"></h6>
         <ul id="roomList" class="list-group"></ul>
       </div>
     </div>
   </div>
-</body>
   
   <script>
     
@@ -1519,64 +1522,72 @@ function displayHotelRecommendations(data) {
       // 获取当前酒店的备注
       const hotelRemarks = hotelRemarksMap[room.Hotel_Name] || [];
       roomList.innerHTML += `
-        <li class="list-group-item">
-          <strong>酒店:</strong> ${room.Hotel_Name} <br>
-          <strong>房型:</strong> ${room.Room_Type} <br>
-          ${isFirstRoomOfHotel && hotelRemarks.length > 0 ? `
-            <div class="remarks">
-              <strong>备注:</strong>
-              <ul>
-                ${hotelRemarks.map(remark => `<li>${remark.replace(/\r\n/g, '<br>')}</li>`).join('')}
-              </ul>
-            </div>
-          ` : ''}
-          <div class="row mt-3">
-            <div class="col-md-4">
-              <strong>前三天价格:</strong>
-              <table class="table table-bordered">
-                <thead>
-                  <tr>
-                    <th>日期</th>
-                    <th>所需积分</th>
-                  </tr>
-                </thead>
-                <tbody>${previousDaysList}</tbody>
-              </table>
-            </div>
-            <div class="col-md-4">
-              <strong>当前日期价格:</strong>
-              <table class="table table-bordered">
-                <thead>
-                  <tr>
-                    <th>日期</th>
-                    <th>所需积分</th>
-                  </tr>
-                </thead>
-                <tbody>${currentDaysList}</tbody>
-                <tfoot>
-                  <tr>
-                    <th>总价</th>
-                    <th>${currentTotalCost} 积分</th>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-            <div class="col-md-4">
-              <strong>后三天价格:</strong>
-              <table class="table table-bordered">
-                <thead>
-                  <tr>
-                    <th>日期</th>
-                    <th>所需积分</th>
-                  </tr>
-                </thead>
-                <tbody>${nextDaysList}</tbody>
-              </table>
-            </div>
-          </div>
-        </li>
-      `;
-    });
+                  <li class="list-group-item">
+                    <div class="text-center">
+              <span style="font-size:1.4rem;"><strong> ${room.Hotel_Name} </strong></span><br>
+              <span style="font-size:1.05rem;"> ${room.Room_Type}</span> <br>
+                    </div>
+              ${isFirstRoomOfHotel && hotelRemarks.length > 0 ? `
+                <div class="remarks">
+                  <strong>备注:</strong>
+                  <ul>
+                    ${hotelRemarks.map(remark => `<li>${remark.replace(/\r\n/g, '<br>')}</li>`).join('')}
+                  </ul>
+                </div>
+              ` : ''}
+              <div class="row mt-3">
+                <div class="col-md-4">
+                  <div class="text-center mb-2">
+                    <span class="matrix-label">前三天价格</span>
+                  </div>
+                  <table class="table table-bordered">
+                    <thead>
+                      <tr>
+                        <th>日期</th>
+                        <th>所需积分</th>
+                      </tr>
+                    </thead>
+                    <tbody>${previousDaysList}</tbody>
+                  </table>
+                </div>
+                <div class="col-md-4">
+                  <div class="text-center mb-2">
+                    <span class="matrix-label">当前日期价格</span>
+                  </div>
+                  <table class="table table-bordered">
+                    <thead>
+                      <tr>
+                        <th>日期</th>
+                        <th>所需积分</th>
+                      </tr>
+                    </thead>
+                    <tbody>${currentDaysList}</tbody>
+                    <tfoot>
+                      <tr>
+                        <th><span class="matrix-label">总价</span></th>
+                        <th>${currentTotalCost} 积分</th>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+                <div class="col-md-4">
+                  <div class="text-center mb-2">
+                    <span class="matrix-label">后三天价格</span>
+                  </div>
+                  <table class="table table-bordered">
+                    <thead>
+                      <tr>
+                        <th>日期</th>
+                        <th>所需积分</th>
+                      </tr>
+                    </thead>
+                    <tbody>${nextDaysList}</tbody>
+                  </table>
+                </div>
+              </div>
+            </li>
+          `;
+        });
     recommendationsDiv.style.display = 'block';
   } else {
     recommendationsDiv.style.display = 'none';
