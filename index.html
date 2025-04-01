@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>温德姆酒店积分计算器</title>
+  <title>温德姆度假会积分计算器</title>
   <!-- Bootstrap 样式 -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css">
   <style>
@@ -12,16 +12,48 @@
       background: #f4f7fc;
       font-family: 'Roboto', sans-serif;
       padding-top: 40px;
+      min-height:100vh;
+      position: relative;
+    }
+        /* 顶部背景图片 */
+        body::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 654px; /* 控制背景高度 */
+      background-image: url('https://cooiip.github.io/HPC/assets/top-background.png');
+      background-size: 100% auto;
+      background-position: center top;
+      background-repeat: no-repeat;
+      z-index: -1; /* 让背景不会覆盖内容 */
+    }
+
+    /* 底部背景图片 */
+    body::after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 654px; /* 控制背景高度 */
+      background-image: url('https://cooiip.github.io/HPC/assets/bottom-background.png');
+      background-size: 100% auto;
+      background-position: center bottom;
+      background-repeat: no-repeat;
+      z-index: -1;
     }
     .container {
       max-width: 900px;
       margin: 0 auto;
+      min-height: calc(100vh-300px);
     }
     h1 {
-      color: #9c7c4bc2;
+      color: #ffffff;
       text-align: center;
       margin-bottom: 20px;
-      font-size: 2.5rem;
+      font-size: 2rem;
       font-weight: bold;
     }
     /* 卡片样式 */
@@ -104,12 +136,12 @@
 </head>
 <body>
   <div class="container">
-    <h1>温德姆酒店积分计算器</h1>
+    <h1>温德姆度假会积分计算器</h1>
     <div class="text-center mt-4">
-      <small><strong>感谢您选择温德姆酒店！</strong></small><br>
+      <small><strong>感谢您选择温德姆寰球度假会！</strong></small><br>
       <small>**红色日期为酒店的不可入住日期</small><br>
-      <small>Powered by <strong>CooiiP</strong></small><br>
-      <small>Thanks to <strong>Tw\Ct\Ch\Iv\Ja</strong></small>
+      <small>Designed by <strong>CooiiP</strong></small><br>
+      <small>Thanks to <strong>Tway\Chris</strong></small>
     </div>
     <!-- 国家选择卡片 -->
     <div class="card">
